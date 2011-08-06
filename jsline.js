@@ -1,7 +1,8 @@
 $(document).ready(function(){
     $("#go").click(function(event){
-	$("#blueline").add("<div>42</div>");
-	alert("Hello World");
+	var newobj = $("<div>42</div>");
+	$("#blueline").append(newobj);
+	newobj.css({position:"absolute", left:100, top:0});
     })
 })
 
