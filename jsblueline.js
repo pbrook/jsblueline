@@ -19,11 +19,9 @@ function ShowNextBell() {
     }
     bell_num = current_change.row[current_bell];
     var a = audio_samples[current_method.rank - (bell_num + 1)];
-    if (false && current_bell & 1) {
     a.pause();
     a.currentTime = 0;
     a.play();
-    }
     newobj = $("<div>" + bell_names[bell_num]
 	    + "</div>");
     newobj.css({position:"absolute", left:current_bell * bell_width,
