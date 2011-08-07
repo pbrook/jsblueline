@@ -2,7 +2,7 @@
 <html>
   <head>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-  <title>jQuery UI Example Page</title>
+  <title>jsBlueLine</title>
   <link type="text/css" href="css/ui-darkness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />	
   <script type="text/javascript" src="js/jquery-1.5.1.min.js"></script>
   <script type="text/javascript" src="js/jquery-ui-1.8.14.custom.min.js"></script>
@@ -10,11 +10,34 @@
   <script type="text/javascript" src="jsblueline.js"></script>
 </head>
 <body>
-  <h1>JSline</h1>
-  <p>Trying...</p>
-  <button id="go">Go</button>
-  <div id="blueline" style="position: relative;"></div>
+  <h1>Online Method Ringer</h1>
+  <div id="method_details">
+    <h2>Method Details</h2>
+    <select id="method_rank">
+      <option value="5">Doubles</option>
+      <option value="6">Minor</option>
+      <option value="7">Triples</option>
+      <option value="8" selected="selected">Major</option>
+      <option value="9">Caters</option>
+      <option value="10">Royal</option>
+      <option value="11">Cinques</option>
+      <option value="12">Maximus</option>
+    </select>
+    <input id="method_notation" value="-1"/>
+  </div>
+  <div id="controls">
+    <h2>Controls</h2>
+    <div>
+      Bell:<select id="user_bell">
+	<option value="-1">None</option>
+      </select>
+      Key:<input id="user_key" value="L" maxLength="1" size="1"/><br/>
+    </div>
+    <div>
+      <button id="reset">Reset</button>
+      <button id="go">Go</button>
+    </div>
+    <div id="blueline"></div>
+  </div>
 </body>
 </html>
-
-

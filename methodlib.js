@@ -59,13 +59,14 @@ function Change(rank) {
 	var n;
 
 	n = this.pos;
-	mask = method.rows[n];
-	this.advance (mask, false);
-	n++;
 	if (n == method.rows.length) {
-	    n = 0;
+	    mask = method.lead_end;
+	    this.pos = 0;
+	} else {
+	    mask = method.rows[n];
+	    this.pos = n + 1;
 	}
-	this.pos = n;
+	this.advance (mask, false);
     };
 
     that.pp = function () {
@@ -214,6 +215,15 @@ function parse_method_cc(rank, notation) {
 	rows.push(res.mask);
     }
     return rows;
+}
+
+function parse_method(rank, notation) {
+    if (notation.length < 3 || notation.charAt(1) != ' ') {
+	return parse_method_cc(rank, notation);
+    } else {
+	return parse_method_microsiril(rank, notation.charAt(0),
+				       notation.substr(2))
+    }
 }
 
 // class
@@ -373,80 +383,3 @@ function MusicBox()
 
     return that;
 }
-
-function do_stuff ()
-{
-    var rows = parse_method_microsiril(10, "b", "&-3-4");
-    var yorkshire = Method(10, "Yorkshire", rows);
-    var comp = Composition();
-    var p = Prover();
-    var i;
-    var changes = 0;
-    var rounds = 0;
-    var music = MusicBox();
-
-    function test_row(c, le) {
-	var r;
-
-	changes++;
-	if (rounds !== 0) {
-	    return true;
-	}
-	music.match_row(c);
-	r = p.check_row(c);
-
-	if (r < 0) {
-	    rounds = -changes;
-	} else if (r == 1) {
-	    rounds = changes;
-	}
-    }
-
-    for (var j = 0; j < 3; j++) {
-	for (i = 0; i < 6; i++) {
-	    comp.append_lead(yorkshire, -1);
-	}
-	comp.append_lead(yorkshire, 9);
-    }
-
-    music.add_pattern([0, 1, 2, 3, 4, 5, 6, 7]);
-    music.add_pattern([-1, -1, -1, -1, 4, 5, 6, 7]);
-    music.add_pattern([7, 6, 5, 4, -1, -1, -1, -1]);
-
-    music.setup(comp.rank);
-    comp.run(test_row);
-    if (rounds > 0) {
-	if (rounds != changes) {
-	    document.write(rounds + " changes (" + (changes - rounds) + " before end of lead)\n");
-	} else {
-	    document.write(rounds + " changes\n");
-	}
-	for (i = 0; i < music.counts.length; i++) {
-	    document.write("<br>" + music.counts[i]);
-	}
-    } else if (rounds < 0) {
-	document.write("False after " + (-rounds) + " changes\n");
-    } else {
-	document.write("Incomplete touch (" + changes + " changes)\n");
-    }
-
-}
-
-// method_db implementation is incomplete.  Do not use.
-var method_db = function () {
-    var methods = {};
-
-    function do_method_query() {
-    }
-    return {
-	get_method: function (id) {
-	    if (!(id in methods)) {
-		/* TODO: look it up in method database.  */
-		throw "Bad method ID";
-	    }
-	    return methods[id];
-	},
-	find_methods: function (name, rank) {
-	}
-    };
-} ();
