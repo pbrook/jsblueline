@@ -2,6 +2,7 @@ var current_change;
 var current_bell;
 var current_row;
 var current_method;
+var current_delta;
 var dummy_bell;
 var dummy_rows;
 var bell_width = 16;
@@ -9,18 +10,20 @@ var user_key;
 var user_bell;
 var user_row;
 var actual_times;
+var start_time;
 
 function ResetMethod() {
     current_bell = 0;
     current_row = -1;
     displayed_rows = 0;
+    current_delta = 0;
     current_change = null;
     user_row = -1;
     actual_times=[];
     $("#blueline").empty();
 }
 
-current_interval = PealSpeedToMS(3, 8);
+current_interval = PealSpeedToMS(2.5, 8);
 
 function Now() {
     return (new Date()).getTime();
@@ -62,6 +65,11 @@ function AdvanceRow() {
 	displayed_rows--;
     }
     actual_times.push(new Array(current_method.rank));
+    /* Nasty hack to compensate for timer drift.
+       Adjust by half the average error.  */
+    //console.log(current_delta);
+    start_time += current_delta / (current_method.rank * 2);
+    current_delta = 0;
 }
 
 function ShowNextBell() {
@@ -69,6 +77,7 @@ function ShowNextBell() {
     var bell_num;
     var delta;
     var color;
+    var real_time;
 
     var now = Now();
     //console.log(Math.round(last_time + current_interval - now));
@@ -83,15 +92,20 @@ function ShowNextBell() {
 
     bell_num = current_change.row[current_bell];
     /* FIXME: Factor in ideal time somewhere?  */
-    actual_times[current_row][bell_num] = -now;
+    real_time = RowStartTime(current_row);
+    real_time += current_bell * current_interval;
     if (bell_num != user_bell) {
+	real_time = now - real_time;
+	actual_times[current_row][bell_num] = real_time;
+	current_delta += real_time;
 	SoundBell(bell_num);
 	if (bell_num == 0) {
-	    color = "#800000";
+	    color = "#ff0000";
 	} else {
 	    color = "#000000";
 	}
     } else {
+	actual_times[current_row][bell_num] = -real_time;
 	color = "#d0d0d0";
     }
     DisplayBell(rowdiv, bell_num, current_bell, color, 0);
@@ -120,6 +134,7 @@ function RingUserBell() {
     var row;
     var row_start;
     var rowdiv;
+    var delta;
 
     SoundBell(user_bell);
     if (active != 1) {
@@ -128,11 +143,10 @@ function RingUserBell() {
     //user_times.append(now);
     row = current_row;
     row_start = RowStartTime(row);
-    if (now < row_start - current_interval) {
+    delta = current_interval / 2;
+    if (now < row_start - delta) {
 	row--;
 	row_start = RowStartTime(row);
-    } else {
-	row = current_row;
     }
     if (row > user_row) {
 	rowdiv = $("#rowdiv" + row);
