@@ -6,11 +6,13 @@ var current_delta;
 var dummy_bell;
 var dummy_rows;
 var bell_width = 16;
-var user_key;
-var user_bell;
-var user_row;
+var user_rows;
 var actual_times;
 var start_time;
+var num_users = 0;
+var user_default_keys = ['L', 'J'];
+var user_keys = [0, 0];
+var user_bells = [-1, -1];
 
 function ResetMethod() {
     current_bell = 0;
@@ -18,7 +20,7 @@ function ResetMethod() {
     displayed_rows = 0;
     current_delta = 0;
     current_change = null;
-    user_row = -1;
+    user_rows = [-1, -1];
     actual_times=[];
     $("#blueline").empty();
 }
@@ -94,7 +96,7 @@ function ShowNextBell() {
     /* FIXME: Factor in ideal time somewhere?  */
     real_time = RowStartTime(current_row);
     real_time += current_bell * current_interval;
-    if (bell_num != user_bell) {
+    if (bell_num != user_bells[0] && bell_num != user_bells[1]) {
 	real_time = now - real_time;
 	actual_times[current_row][bell_num] = real_time;
 	current_delta += real_time;
@@ -129,14 +131,14 @@ function PealSpeedToMS(speed, rank) {
     return speed * 60 * 60 * 1000 / (5040 * (rank + 0.5));
 }
 
-function RingUserBell() {
+function RingUserBell(i) {
     var now = Now();
     var row;
     var row_start;
     var rowdiv;
     var delta;
 
-    SoundBell(user_bell);
+    SoundBell(user_bells[i]);
     if (active != 1) {
 	return;
     }
@@ -148,31 +150,61 @@ function RingUserBell() {
 	row--;
 	row_start = RowStartTime(row);
     }
-    if (row > user_row) {
+    if (row > user_rows[i]) {
 	rowdiv = $("#rowdiv" + row);
-	DisplayBell(rowdiv, user_bell, (now - row_start) / current_interval,
+	DisplayBell(rowdiv, user_bells[i], (now - row_start) / current_interval,
 		    "#0000ff", 1);
-	user_row = row;
-	actual_times[row][user_bell] += now;
+	user_rows[i] = row;
+	actual_times[row][user_bells[i]] += now;
     }
 }
 
 function RankChanged() {
     var rank = parseInt($("#method_rank").val(), 10);
-    var obj = $("#user_bell");
+    var obj;
     var old_val;
+    var i;
+    var n;
 
-    old_val = parseInt(obj.val(), 10);
-    if (old_val > rank) {
-	old_val = -1;
-	obj.val(-1);
+    for (n = 0; n < num_users; n++) {
+	obj = $("#user_bell" + n);
+	old_val = parseInt(obj.val(), 10);
+	if (old_val > rank) {
+	    old_val = -1;
+	    obj.val(-1);
+	}
+	obj.children().slice(1).remove();
+	for (i = 0; i < rank; i++) {
+	    obj.append("<option value=" + i + ">" + (i + 1) + "</option>");
+	}
+	if (old_val != -1) {
+	    obj.val(old_val);
+	}
     }
-    obj.children().slice(1).remove();
-    for (i = 0; i < rank; i++) {
-	obj.append("<option value=" + i + ">" + (i + 1) + "</option>");
+}
+
+function UserChanged(event) {
+    var obj;
+    var val;
+
+    RankChanged();
+    if (num_users > 0) {
+	user_bells[0] = parseInt($("#user_bell0").val(), 10);
+	obj = $("#user_key0");
+	val = obj.val();
+	user_keys[0] = val.toUpperCase().charCodeAt(0);
+	if (user_keys[0] != val.charCodeAt(0)) {
+	    obj.val(val);
+	}
     }
-    if (old_val != -1) {
-	obj.val(old_val);
+    if (num_users > 1) {
+	user_bells[1] = parseInt($("#user_bell1").val(), 10);
+	obj = $("#user_key1");
+	val = obj.val();
+	user_keys[1] = val.toUpperCase().charCodeAt(0);
+	if (user_keys[1] != val.charCodeAt(0)) {
+	    obj.val(val);
+	}
     }
 }
 
@@ -211,25 +243,27 @@ $(document).ready(function() {
 	}
     });
 
-    $("#user_key").change(function(event) {
-	var obj = $(this);
-	var val = obj.val();
-	user_key = val.toUpperCase().charCodeAt(0);
-	if (user_key != val.charCodeAt(0)) {
-	    obj.val(val);
-	}
-    });
-    $("#user_key").change();
-
     $("#method_rank").change(function(event) {
 	RankChanged();
     });
-    RankChanged();
 
-    $("#user_bell").change(function(event) {
-	user_bell = parseInt($(this).val(), 10);
+    $("#user_add").click(function (event) {
+	s = '<div id="user' + num_users + '">';
+	s += 'Bell: <select id="user_bell' + num_users
+	    + '"><option value="-1">None</option></select>';
+	s += 'Key: <input id="user_key' + num_users
+	    + '" value="' + user_default_keys[num_users]
+	    + '" maxLength="1" size="1"/><br/>';
+	s += '</div>';
+	$("#user_controls").append(s);
+	$("#user_bell" + num_users).change(UserChanged);
+	$("#user_key" + num_users).change(UserChanged);
+	num_users++;
+	UserChanged();
+	if (num_users == 2) {
+	    $(this).attr('disabled', 'disabled')
+	}
     });
-    $("#user_bell").change();
 
     $("#reset").click(function(event) {
 	if (active == 1) {
@@ -239,8 +273,10 @@ $(document).ready(function() {
     });
 
     $(document).keydown(function(event) {
-	if (event.which == user_key && user_bell >= 0) {
-	    RingUserBell();
+	for (i = 0; i < num_users; i++) {
+	    if (event.which == user_keys[i] && user_bells[i] >= 0) {
+		RingUserBell(i);
+	    }
 	}
     });
 
