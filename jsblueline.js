@@ -13,6 +13,7 @@ var num_users = 0;
 var user_default_keys = ['L', 'J'];
 var user_keys = [0, 0];
 var user_bells = [-1, -1];
+var current_interval;
 
 function ResetMethod() {
     current_bell = 0;
@@ -24,8 +25,6 @@ function ResetMethod() {
     actual_times=[];
     $("#blueline").empty();
 }
-
-current_interval = PealSpeedToMS(2.5, 8);
 
 function Now() {
     return (new Date()).getTime();
@@ -68,9 +67,9 @@ function AdvanceRow() {
     }
     actual_times.push(new Array(current_method.rank));
     /* Nasty hack to compensate for timer drift.
-       Adjust by half the average error.  */
+       Adjust by the average error.  */
     //console.log(current_delta);
-    start_time += current_delta / (current_method.rank * 2);
+    start_time += current_delta / current_method.rank;
     current_delta = 0;
 }
 
@@ -99,6 +98,7 @@ function ShowNextBell() {
     if (bell_num != user_bells[0] && bell_num != user_bells[1]) {
 	real_time = now - real_time;
 	actual_times[current_row][bell_num] = real_time;
+	//console.log(real_time);
 	current_delta += real_time;
 	SoundBell(bell_num);
 	if (bell_num == 0) {
@@ -128,7 +128,7 @@ function ShowNextBell() {
 }
 
 function PealSpeedToMS(speed, rank) {
-    return speed * 60 * 60 * 1000 / (5040 * (rank + 0.5));
+    return speed * 60 * 1000 / (5040 * (rank + 0.5));
 }
 
 function RingUserBell(i) {
@@ -218,12 +218,16 @@ $(document).ready(function() {
 	audio_samples[i].load();
     }
 
+    $("#tabs").tabs();
+
     active = 0
     $("#go").click(function(event) {
 	var gobutton = $(this);
 	if (active != 1) {
 	    if (current_change === null) {
 		var rank = parseInt($("#method_rank").val(), 10);
+		var speed = parseInt($("#speed").val(), 10);
+		current_interval = PealSpeedToMS(speed, rank);
 		current_change = Change(rank);
 		current_method = Method(rank, "", parse_method(rank,
 			$("#method_notation").val()));
